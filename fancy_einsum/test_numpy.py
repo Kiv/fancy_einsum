@@ -35,3 +35,16 @@ def test_ellipse_matmul(args):
     a, b = args
     actual = einsum('...rows temp, ...temp cols -> ...rows cols', a, b)
     assert allclose(actual, np.einsum('...rt,...tc->...rc', a, b))
+
+
+@composite
+def chain_matmul(draw):
+    sizes = [draw(integers(1, 4)) for _ in range(5)]
+    shapes = [(sizes[i-1], sizes[i]) for i in range(1, len(sizes))]
+    return [tensor(draw, shape) for shape in shapes]
+
+
+@given(chain_matmul())
+def test_chain_matmul(args):
+    actual = einsum('rows t1, t1 t2, t2 t3, t3 cols -> rows cols', *args)
+    assert allclose(actual, np.einsum('ab,bc,cd,de->ae', *args))

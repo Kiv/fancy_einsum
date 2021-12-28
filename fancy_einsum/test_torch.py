@@ -7,7 +7,7 @@ from hypothesis.extra.numpy import arrays
 from fancy_einsum import einsum
 
 def tensor(draw, shape):
-    arr = draw(arrays(dtype=float, shape=shape))
+    arr = draw(arrays(dtype=int, elements=integers(-10,10), shape=shape))
     return torch.Tensor(arr)
 
 @composite
@@ -49,3 +49,8 @@ def chain_matmul(draw):
 def test_chain_matmul(args):
     actual = einsum('rows t1, t1 t2, t2 t3, t3 cols -> rows cols', *args)
     assert allclose(actual, torch.einsum('ab,bc,cd,de->ae', *args))
+
+
+if __name__ == '__main__':
+    import pytest
+    pytest.main()

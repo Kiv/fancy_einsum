@@ -4,3 +4,4 @@
 .pytest_cache
 *.egg_info
 fancy_einsum_kiv.egg-info
+dist/
