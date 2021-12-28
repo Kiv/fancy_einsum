@@ -69,4 +69,7 @@ def test_extra_spaces():
     assert actual == 'ab,bc->ac'
 
 
-
+def test_chain_matmul():
+    actual = convert_equation(
+        'rows t1, t1 t2, t2 t3, t3 t4, t4 cols -> rows cols')
+    assert actual == 'rt,tT,TA,AB,Bc->rc'

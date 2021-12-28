@@ -113,13 +113,16 @@ def convert_equation(equation):
     # Handle multiple long with same first letter. Second one gets first available letter
     conflicts = []
     for term in terms:
-        if term not in SPECIAL and term not in long_to_short and not try_make_abbr(term):
+        if (term not in SPECIAL and 
+            term not in long_to_short and 
+            term not in conflicts and
+            not try_make_abbr(term)):
             conflicts.append(term)
     if conflicts:
         available = [c for c in string.ascii_uppercase + string.ascii_lowercase if c not in short_to_long]
-        solution = list(zip(conflicts, available))
+        solution = list(zip(available, conflicts))
         short_to_long.update(solution)
-        long_to_short.update((l, s) for s, l in solution.items())
+        long_to_short.update((l, s) for s, l in solution)
 
     new_equation = ''.join(term if term in SPECIAL else long_to_short[term] for term in terms)
     return new_equation
