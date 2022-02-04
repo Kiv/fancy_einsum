@@ -1,3 +1,7 @@
+import itertools
+import string
+
+import pytest
 import torch
 from torch import allclose
 from hypothesis import given
@@ -49,6 +53,18 @@ def chain_matmul(draw):
 def test_chain_matmul(args):
     actual = einsum('rows t1, t1 t2, t2 t3, t3 cols -> rows cols', *args)
     assert allclose(actual, torch.einsum('ab,bc,cd,de->ae', *args))
+
+
+def test_too_many_variables():
+    names = [''.join(p) for p in itertools.permutations(string.ascii_lowercase, 3)]
+    eq = f'{" ".join(names)} ->'
+    print(eq)
+    tensor = torch.ones([1] * len(names))
+    with pytest.raises(ValueError):
+        einsum(eq, tensor)
+
+
+    
 
 
 if __name__ == '__main__':

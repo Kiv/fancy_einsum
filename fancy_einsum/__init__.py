@@ -120,6 +120,8 @@ def convert_equation(equation):
             conflicts.append(term)
     if conflicts:
         available = [c for c in string.ascii_uppercase + string.ascii_lowercase if c not in short_to_long]
+        if not available:
+            raise ValueError("Ran out of letters to use for dimension names!")
         solution = list(zip(available, conflicts))
         short_to_long.update(solution)
         long_to_short.update((l, s) for s, l in solution)
