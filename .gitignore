@@ -3,5 +3,5 @@
 .hypothesis
 .pytest_cache
 *.egg_info
-fancy_einsum_kiv.egg-info
+fancy_einsum.egg-info
 dist/

@@ -1,10 +1,3 @@
-"""
-Concerns:
-- Nice error handling (map back to original strings)
-- Complete feature set:
-    - Ellipsis
-    - Optional RHS
-"""
 import re
 import sys
 import string
@@ -80,7 +73,8 @@ class NumpyBackend(AbstractBackend):
 
 _part_re = re.compile(r'\.{3}|\w+|,|->')
 
-def convert_equation(equation):
+def convert_equation(equation: str) -> str:
+    """Convert an equation using human-readable variable names to an equation using single letter."""
     SPECIAL = ['...', ',', '', '->']
     terms = _part_re.findall(equation)
     if '->' not in terms:
@@ -130,7 +124,13 @@ def convert_equation(equation):
     return new_equation
 
 
-def einsum(equation, *operands):
+def einsum(equation: str, *operands):
+    """Evaluates the Einstein summation convention on the operands.
+    
+    See: 
+      https://pytorch.org/docs/stable/generated/torch.einsum.html
+      https://numpy.org/doc/stable/reference/generated/numpy.einsum.html
+    """
     backend = get_backend(operands[0])
     new_equation = convert_equation(equation)
     return backend.einsum(new_equation, *operands)
