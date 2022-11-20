@@ -74,12 +74,14 @@ class JaxBackend(AbstractBackend):
     framework_name = "jax"
 
     def __init__(self):
+        import jax
         import jax.numpy as jnp
 
+        self.jax = jax
         self.jnp = jnp
 
     def is_appropriate_type(self, tensor):
-        return isinstance(tensor, self.jnp.ndarray)
+        return isinstance(tensor, self.jax.Array)
 
     def einsum(self, equation, *operands):
         return self.jnp.einsum(equation, *operands)
