@@ -5,6 +5,7 @@ import string
 # This part follows einops
 _backends = {}
 
+
 def get_backend(tensor):
     for framework_name, backend in _backends.items():
         if backend.is_appropriate_type(tensor):
@@ -26,8 +27,7 @@ def get_backend(tensor):
                 if backend.is_appropriate_type(tensor):
                     return backend
 
-    raise RuntimeError('Tensor type unknown: {}'.format(type(tensor)))
-
+    raise RuntimeError("Tensor type unknown: {}".format(type(tensor)))
 
 
 class AbstractBackend:
@@ -41,10 +41,11 @@ class AbstractBackend:
 
 
 class TorchBackend(AbstractBackend):
-    framework_name = 'torch'
+    framework_name = "torch"
 
     def __init__(self):
         import torch
+
         self.torch = torch
 
     def is_appropriate_type(self, tensor):
@@ -55,10 +56,11 @@ class TorchBackend(AbstractBackend):
 
 
 class NumpyBackend(AbstractBackend):
-    framework_name = 'numpy'
+    framework_name = "numpy"
 
     def __init__(self):
         import numpy
+
         self.np = numpy
 
     def is_appropriate_type(self, tensor):
@@ -67,30 +69,50 @@ class NumpyBackend(AbstractBackend):
     def einsum(self, equation, *operands):
         return self.np.einsum(equation, *operands)
 
+
+class JaxBackend(AbstractBackend):
+    framework_name = "jax"
+
+    def __init__(self):
+        import jax.numpy as jnp
+
+        self.jnp = jnp
+
+    def is_appropriate_type(self, tensor):
+        return isinstance(tensor, self.jnp.ndarray)
+
+    def einsum(self, equation, *operands):
+        return self.jnp.einsum(equation, *operands)
+
+
 # end part following einops
 
 
+_part_re = re.compile(r"\.{3}|\w+|,|->")
 
-_part_re = re.compile(r'\.{3}|\w+|,|->')
 
 def convert_equation(equation: str) -> str:
     """Convert an equation using human-readable variable names to an equation using single letter."""
-    SPECIAL = ['...', ',', '', '->']
+    SPECIAL = ["...", ",", "", "->"]
     terms = _part_re.findall(equation)
-    if '->' not in terms:
+    if "->" not in terms:
         # Infer RHS side
         # Important that we sort alphabetically by long names, not short ones
-        rhs = ['->']
-        if '...' in terms:
-            rhs.append('...')
-        rhs.extend(sorted(term for term in terms if
-            term not in SPECIAL and terms.count(term) == 1))
+        rhs = ["->"]
+        if "..." in terms:
+            rhs.append("...")
+        rhs.extend(
+            sorted(
+                term for term in terms if term not in SPECIAL and terms.count(term) == 1
+            )
+        )
         terms.extend(rhs)
-    
+
     # First pass: prefer to map long names to first letter, uppercase if needed
     # so "time" becomes t if possible, then T.
     short_to_long = {}
     long_to_short = {}
+
     def try_make_abbr(s):
         base = s[0]
         if base not in short_to_long:
@@ -107,27 +129,35 @@ def convert_equation(equation: str) -> str:
     # Handle multiple long with same first letter. Second one gets first available letter
     conflicts = []
     for term in terms:
-        if (term not in SPECIAL and 
-            term not in long_to_short and 
-            term not in conflicts and
-            not try_make_abbr(term)):
+        if (
+            term not in SPECIAL
+            and term not in long_to_short
+            and term not in conflicts
+            and not try_make_abbr(term)
+        ):
             conflicts.append(term)
     if conflicts:
-        available = [c for c in string.ascii_uppercase + string.ascii_lowercase if c not in short_to_long]
+        available = [
+            c
+            for c in string.ascii_uppercase + string.ascii_lowercase
+            if c not in short_to_long
+        ]
         if not available:
             raise ValueError("Ran out of letters to use for dimension names!")
         solution = list(zip(available, conflicts))
         short_to_long.update(solution)
         long_to_short.update((l, s) for s, l in solution)
 
-    new_equation = ''.join(term if term in SPECIAL else long_to_short[term] for term in terms)
+    new_equation = "".join(
+        term if term in SPECIAL else long_to_short[term] for term in terms
+    )
     return new_equation
 
 
 def einsum(equation: str, *operands):
     """Evaluates the Einstein summation convention on the operands.
-    
-    See: 
+
+    See:
       https://pytorch.org/docs/stable/generated/torch.einsum.html
       https://numpy.org/doc/stable/reference/generated/numpy.einsum.html
     """
