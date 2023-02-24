@@ -67,8 +67,24 @@ class NumpyBackend(AbstractBackend):
     def einsum(self, equation, *operands):
         return self.np.einsum(equation, *operands)
 
-# end part following einops
 
+class JaxBackend(AbstractBackend):
+    framework_name = 'jax'
+
+    def __init__(self):
+        import jax
+        import jax.numpy as jnp
+        self.jax = jax
+        self.jnp = jnp
+
+    def is_appropriate_type(self, tensor):
+        return isinstance(tensor, self.jax.Array)
+
+    def einsum(self, equation, *operands):
+        return self.jnp.einsum(equation, *operands)
+
+
+# end part following einops
 
 
 _part_re = re.compile(r'\.{3}|\w+|,|->')
@@ -86,7 +102,7 @@ def convert_equation(equation: str) -> str:
         rhs.extend(sorted(term for term in terms if
             term not in SPECIAL and terms.count(term) == 1))
         terms.extend(rhs)
-    
+
     # First pass: prefer to map long names to first letter, uppercase if needed
     # so "time" becomes t if possible, then T.
     short_to_long = {}
@@ -107,8 +123,8 @@ def convert_equation(equation: str) -> str:
     # Handle multiple long with same first letter. Second one gets first available letter
     conflicts = []
     for term in terms:
-        if (term not in SPECIAL and 
-            term not in long_to_short and 
+        if (term not in SPECIAL and
+            term not in long_to_short and
             term not in conflicts and
             not try_make_abbr(term)):
             conflicts.append(term)
@@ -126,8 +142,8 @@ def convert_equation(equation: str) -> str:
 
 def einsum(equation: str, *operands):
     """Evaluates the Einstein summation convention on the operands.
-    
-    See: 
+
+    See:
       https://pytorch.org/docs/stable/generated/torch.einsum.html
       https://numpy.org/doc/stable/reference/generated/numpy.einsum.html
     """
